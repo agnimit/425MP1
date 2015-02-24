@@ -12,12 +12,12 @@ TCP_PORT1 = 4001
 TCP_PORT2 = 4002
 TCP_PORT3 = 4003
 TCP_PORT4 = 4004
-
 BUFFER_SIZE = 200
-
 info = {"AB": [Lock(), 0, []], "BA": [Lock(), 0, []], "AC": [Lock(), 0, []], "CA": [Lock(), 0, []],  
 		"AD": [Lock(), 0, []],  "DA": [Lock(), 0, []],  "BC": [Lock(), 0, []],  "CB": [Lock(), 0, []],  
 		"BD": [Lock(), 0, []],  "DB": [Lock(), 0, []],  "CD": [Lock(), 0, []],  "DC": [Lock(), 0, []]}
+
+counter_mutex = Lock()	
 
 def delay(destination, sender):
 	key = sender + destination
@@ -53,6 +53,17 @@ def parse_send_message(command, max_delay, sender):
 	if destination == 'D':
 		conn4.send(final_message)
 
+def send_acknowledgements():
+	global counter
+	while counter < 4:
+		waiting = 1
+
+	conn1.send("You are connected to the server!")
+	conn2.send("You are connected to the server!")	
+	conn3.send("You are connected to the server!")	
+	conn4.send("You are connected to the server!")		
+
+
 def receive_from_nodeA():
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -61,15 +72,17 @@ def receive_from_nodeA():
 	count = 0
 	global conn1
 	conn1, addr = s.accept()
+	counter_mutex.acquire()
+	global counter
+	counter+=1
+	counter_mutex.release()
 	while 1:
 		data = conn1.recv(BUFFER_SIZE)
-		#conn1.send("The server received your message: " + data)
 		if len(data) > 0:
 			destination = data[len(data)-2]
 			key = "A" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
-			#print time.time(), data
 			thread.start_new_thread(delay, (destination, "A"))
 		data = ""
 		count+=1
@@ -83,15 +96,17 @@ def receive_from_nodeB():
 	count = 0
 	global conn2
 	conn2, addr = s.accept()
+	counter_mutex.acquire()
+	global counter
+	counter+=1
+	counter_mutex.release()
 	while 1:
 		data = conn2.recv(BUFFER_SIZE)
-		#conn2.send("The server received your message: " + data)
 		if len(data) > 0:
 			destination = data[len(data)-2]
 			key = "B" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
-			#print time.time(), data
 			thread.start_new_thread(delay, (destination, "B"))
 		data = ""
 		count+=1
@@ -105,15 +120,17 @@ def receive_from_nodeC():
 	count = 0
 	global conn3
 	conn3, addr = s.accept()
+	counter_mutex.acquire()
+	global counter
+	counter+=1
+	counter_mutex.release()
 	while 1:
 		data = conn3.recv(BUFFER_SIZE)
-		#conn3.send("The server received your message: " + data)
 		if len(data) > 0:
 			destination = data[len(data)-2]
 			key = "C" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
-			#print time.time(), data
 			thread.start_new_thread(delay, (destination, "C"))
 		data = ""
 		count+=1
@@ -127,24 +144,29 @@ def receive_from_nodeD():
 	count = 0
 	global conn4
 	conn4, addr = s.accept()
+	counter_mutex.acquire()
+	global counter
+	counter+=1
+	counter_mutex.release()
 	while 1:
 		data = conn4.recv(BUFFER_SIZE)
-		#conn4.send("The server received your message: " + data)
 		if len(data) > 0:
 			destination = data[len(data)-2]
 			key = "D" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
-			#print time.time(), data
 			thread.start_new_thread(delay, (destination, "D"))
 		data = ""
 		count+=1		
 
 def main():
+	global counter
+	counter = 0
 	thread.start_new_thread(receive_from_nodeA, ())
 	thread.start_new_thread(receive_from_nodeB, ())
 	thread.start_new_thread(receive_from_nodeC, ())
 	thread.start_new_thread(receive_from_nodeD, ())
+	thread.start_new_thread(send_acknowledgements, ())
 	while 1:
 		x = 1
 
