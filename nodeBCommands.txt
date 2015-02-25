@@ -1,1 +1,3 @@
-send Hello A
+send Hi from B A
+send Hi1 from B C
+send Hi2 from B D

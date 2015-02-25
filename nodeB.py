@@ -16,14 +16,14 @@ def readInputs(socket):
 		data = raw_input("")
 		if len(data) > 0:
 			socket.send(data + "\n")
-			print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(line)-1] + ", System time is: " + str(time.time())
+			print "Sent \"" + data[5:len(data)-3] + "\" to " + data[len(data)-2] + ", System time is: " + str(time.time())
 
 
 def readData():
 	while 1:
 		data = s.recv(BUFFER_SIZE)
 		if len(data) > 0:
-			print data
+			print data[0:len(data) - 1]
 			data = ""
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,8 +39,9 @@ while connection == 0:
 		
 f = open('nodeBCommands.txt', 'r')
 for line in f:
-	s.send(line + "\n")
-	print "Sent \"" + line[5:len(line)-2] + "\" to " + line[len(line)-1] + ", System time is: " + str(time.time())
+	s.send(line)
+	print "Sent \"" + line[5:len(line)-3] + "\" to " + line[len(line)-2] + ", System time is: " + str(time.time())
+	time.sleep(1)
 f.close()
 
 thread.start_new_thread(readInputs, (s,))

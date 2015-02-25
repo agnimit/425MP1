@@ -43,15 +43,15 @@ def delay(destination, sender):
 def parse_send_message(command, max_delay, sender):
 	message = command[5:len(command) - 3]
 	destination = command[len(command) - 2]
-	final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time()) 
+	final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
 	if destination == 'A':
-		conn1.send(final_message)
+		conn1.send(final_message + "\n")
 	if destination == 'B':
-		conn2.send(final_message)
+		conn2.send(final_message + "\n")
 	if destination == 'C':
-		conn3.send(final_message)
+		conn3.send(final_message + "\n")
 	if destination == 'D':
-		conn4.send(final_message)
+		conn4.send(final_message + "\n")
 
 def send_acknowledgements():
 	global counter
