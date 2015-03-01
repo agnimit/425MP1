@@ -72,6 +72,7 @@ def readData_sequencer():
 		data = sequencer.recv(BUFFER_SIZE)
 		if len(data) > 0 and "connected" not in data:
 			data = data.replace("\n", "")
+			#print "Received " + data
 			parsed = data.split(' ')
 			sequence_num = int(parsed[4])
 			message = parsed[0] + " " + parsed[1] + " " + parsed[2] + " " + parsed[3]

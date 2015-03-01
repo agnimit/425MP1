@@ -27,25 +27,26 @@ def send_acknowledgements():
 	conn3.send("You are connected to the sequencer!")	
 	conn4.send("You are connected to the sequencer!")
 
-def send_delayed_messageA(data, delay):
+def send_delayed_messageA(data, delay, num):
 	time.sleep(delay)
-	conn1.send(data + " " + str(sequence))
-def send_delayed_messageB(data, delay):
+	conn1.send(data + " " + str(num) + "\n")
+def send_delayed_messageB(data, delay, num):
 	time.sleep(delay)
-	conn2.send(data + " " + str(sequence))
-def send_delayed_messageC(data, delay):
+	conn2.send(data + " " + str(num) + "\n")
+def send_delayed_messageC(data, delay, num):
 	time.sleep(delay)
-	conn3.send(data + " " + str(sequence))
-def send_delayed_messageD(data, delay):
+	conn3.send(data + " " + str(num) + "\n")
+def send_delayed_messageD(data, delay, num):
 	time.sleep(delay)	
-	conn4.send(data + " " + str(sequence))
+	conn4.send(data + " " + str(num) + "\n")
 
-def broadcast(data):
+def broadcast(data, num):
 	data = data.replace("\n", "")
-	thread.start_new_thread(send_delayed_messageA, (data, randint(0,10)))
-	thread.start_new_thread(send_delayed_messageB, (data, randint(0,10)))
-	thread.start_new_thread(send_delayed_messageC, (data, randint(0,10)))
-	thread.start_new_thread(send_delayed_messageD, (data, randint(0,10)))
+	print data
+	thread.start_new_thread(send_delayed_messageA, (data, randint(0,5), num))
+	thread.start_new_thread(send_delayed_messageB, (data, randint(0,5), num))
+	thread.start_new_thread(send_delayed_messageC, (data, randint(0,5), num))
+	thread.start_new_thread(send_delayed_messageD, (data, randint(0,5), num))
 
 def receive_from_nodeA():
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,9 +65,10 @@ def receive_from_nodeA():
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1
+		temp_sequence = sequence
 		sequence_mutex.release()
 		if len(data) > 0:
-			broadcast(data)
+			broadcast(data, temp_sequence)
 		data = ""
 		count+=1
 		
@@ -88,9 +90,10 @@ def receive_from_nodeB():
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1
+		temp_sequence = sequence
 		sequence_mutex.release()
 		if len(data) > 0:
-			broadcast(data)
+			broadcast(data, temp_sequence)
 		data = ""
 		count+=1
 
@@ -112,9 +115,10 @@ def receive_from_nodeC():
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1
+		temp_sequence = sequence
 		sequence_mutex.release()
 		if len(data) > 0:
-			broadcast(data)
+			broadcast(data, temp_sequence)
 		data = ""
 		count+=1
 
@@ -136,11 +140,12 @@ def receive_from_nodeD():
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1
+		temp_sequence = sequence
 		sequence_mutex.release()
 		if len(data) > 0:
-			broadcast(data)
+			broadcast(data, temp_sequence)
 		data = ""
-		count+=1		
+		count+=1
 
 def main():
 	global counter
