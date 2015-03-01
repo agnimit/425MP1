@@ -21,8 +21,17 @@ def sleep_and_send(data, delay):
 	server.send(data + "\n")
 
 def readInputs():
+	readFile = False
+	f = open('nodeACommands.txt', 'r')
 	while 1:
-		data = raw_input("")
+		if readFile == False:
+			data = f.readline().replace("\n", '')
+			print data
+			if data == '':
+				f.close()
+				readFile = True
+		if readFile == True:
+			data = raw_input("")
 		if "show_all" in data:
 			for a in key_value:
 				sys.stdout.write(str(a) + ': ' + str(key_value[a]) + '  ')	
@@ -30,10 +39,14 @@ def readInputs():
 			continue	
 		elif len(data) > 0 and "send" in data.lower():
 			server.send(data + "\n")
+			time.sleep(0.3)
 			if "send" in data.lower():
 				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
-			continue	
-		delay = raw_input("").split()
+			continue
+		if readFile == True:		
+			delay = raw_input("").split()
+		else:
+			delay = f.readline().replace("\n", '').split()
 		thread.start_new_thread(sleep_and_send, (data, delay[1],))			
 
 def total_order():
@@ -95,7 +108,7 @@ def main():
 		if len(data) > 0:
 			print data
 			server_connection = 1
-			
+
 	# f = open('nodeACommands.txt', 'r')
 	# for line in f:
 	# 	server.send(line)
