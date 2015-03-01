@@ -19,6 +19,26 @@ info = {"AB": [Lock(), 0, []], "BA": [Lock(), 0, []], "AC": [Lock(), 0, []], "CA
 
 counter_mutex = Lock()	
 
+def send_delayed_messageA(data, delay):
+	time.sleep(delay)
+	conn1.send(data)
+def send_delayed_messageB(data, delay):
+	time.sleep(delay)
+	conn2.send(data)
+def send_delayed_messageC(data, delay):
+	time.sleep(delay)
+	conn3.send(data)
+def send_delayed_messageD(data, delay):
+	time.sleep(delay)	
+	conn4.send(data)
+
+def broadcast(data):
+	data = data.replace("\n", "")
+	thread.start_new_thread(send_delayed_messageA, (data, randint(0,10)))
+	thread.start_new_thread(send_delayed_messageB, (data, randint(0,10)))
+	thread.start_new_thread(send_delayed_messageC, (data, randint(0,10)))
+	thread.start_new_thread(send_delayed_messageD, (data, randint(0,10)))
+
 def delay(destination, sender):
 	key = sender + destination
 	info[key][0].acquire()
@@ -37,10 +57,10 @@ def delay(destination, sender):
 
 	info[key][0].acquire()
 	command = (queue.pop(0))[0]
-	parse_send_message(command, max_delay, sender)			
+	parse_server_message(command, max_delay, sender)			
 	info[key][0].release()
 
-def parse_send_message(command, max_delay, sender):
+def parse_server_message(command, max_delay, sender):
 	message = command[5:len(command) - 3]
 	destination = command[len(command) - 2]
 	final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
@@ -78,12 +98,14 @@ def receive_from_nodeA():
 	counter_mutex.release()
 	while 1:
 		data = conn1.recv(BUFFER_SIZE)
-		if len(data) > 0:
+		if len(data) > 0 and "send" in data.lower():
 			destination = data[len(data)-2]
 			key = "A" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
 			thread.start_new_thread(delay, (destination, "A"))
+		elif len(data) > 0:
+			broadcast(data)		
 		data = ""
 		count+=1
 		
@@ -102,12 +124,14 @@ def receive_from_nodeB():
 	counter_mutex.release()
 	while 1:
 		data = conn2.recv(BUFFER_SIZE)
-		if len(data) > 0:
+		if len(data) > 0 and "send" in data.lower():
 			destination = data[len(data)-2]
 			key = "B" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
 			thread.start_new_thread(delay, (destination, "B"))
+		elif len(data) > 0:
+			broadcast(data)	
 		data = ""
 		count+=1
 
@@ -126,12 +150,14 @@ def receive_from_nodeC():
 	counter_mutex.release()
 	while 1:
 		data = conn3.recv(BUFFER_SIZE)
-		if len(data) > 0:
+		if len(data) > 0 and "send" in data.lower():
 			destination = data[len(data)-2]
 			key = "C" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
 			thread.start_new_thread(delay, (destination, "C"))
+		elif len(data) > 0:
+			broadcast(data)	
 		data = ""
 		count+=1
 
@@ -150,12 +176,14 @@ def receive_from_nodeD():
 	counter_mutex.release()
 	while 1:
 		data = conn4.recv(BUFFER_SIZE)
-		if len(data) > 0:
+		if len(data) > 0 and "send" in data.lower():
 			destination = data[len(data)-2]
 			key = "D" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
 			thread.start_new_thread(delay, (destination, "D"))
+		elif len(data) > 0:
+			broadcast(data)		
 		data = ""
 		count+=1		
 

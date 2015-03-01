@@ -1,51 +1,112 @@
 #!/usr/bin/env python
 
 import socket
-import thread 
 import time
+import thread 
 import fileinput
+import sys
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 4002
+TCP_PORT_SEQUENCER = 8002
 BUFFER_SIZE = 1024
-connection = 0
 
+key_value = {}
+from_server = []
+from_sequencer = {}
 
-def readInputs(socket):
+def sleep_and_send(data, delay):
+	time.sleep(float(delay))
+	sequencer.send(data + "\n")
+	server.send(data + "\n")
+
+def readInputs():
 	while 1:
 		data = raw_input("")
-		if len(data) > 0:
-			socket.send(data + "\n")
-			print "Sent \"" + data[5:len(data)-3] + "\" to " + data[len(data)-2] + ", System time is: " + str(time.time())
+		if "show_all" in data:
+			for a in key_value:
+				sys.stdout.write(str(a) + ': ' + str(key_value[a]) + '  ')	
+			sys.stdout.write("\n")	
+			continue	
+		elif len(data) > 0 and "send" in data.lower():
+			server.send(data + "\n")
+			if "send" in data.lower():
+				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
+			continue	
+		delay = raw_input("").split()
+		thread.start_new_thread(sleep_and_send, (data, delay[1],))			
 
-
-def readData():
+def total_order():
+	global s
+	match = 1
+	while match == 1:
+		if (s+1) in from_sequencer.keys():
+			message = from_sequencer[s + 1]
+			for string in from_server:
+				if message == string:
+					print message	
+					if "insert" in message or "update" in message:
+						parsed = message.split(' ')
+						key = int(parsed[1])
+						value = int(parsed[2])
+						model = parsed[3]
+						key_value[key] = value	
+						del from_sequencer[s + 1]
+						from_server.remove(message)
+						s = s + 1
+		else:
+			match = 0		
+def readData_server():
+	global server
 	while 1:
-		data = s.recv(BUFFER_SIZE)
-		if len(data) > 0:
+		data = server.recv(BUFFER_SIZE)
+		if len(data) > 0 and "received" in data.lower():
 			print data[0:len(data) - 1]
+		else:
+			from_server.append(data)	
+		data = ""
+
+def readData_sequencer():
+	global sequencer
+	while 1:
+		data = sequencer.recv(BUFFER_SIZE)
+		if len(data) > 0 and "connected" not in data:
+			data = data.replace("\n", "")
+			parsed = data.split(' ')
+			sequence_num = int(parsed[4])
+			message = parsed[0] + " " + parsed[1] + " " + parsed[2] + " " + parsed[3]
+			from_sequencer[sequence_num] = message
+			total_order()
 			data = ""
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((TCP_IP, TCP_PORT))
+def main():
+	global server
+	global sequencer
+	global s
+	s = 0
+	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	server.connect((TCP_IP, TCP_PORT))
+	sequencer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sequencer.connect((TCP_IP, TCP_PORT_SEQUENCER))
+	server_connection = 0
+	while server_connection == 0:
+		data = server.recv(BUFFER_SIZE)
+		if len(data) > 0:
+			print data
+			server_connection = 1
+			
+	# f = open('nodeACommands.txt', 'r')
+	# for line in f:
+	# 	server.send(line)
+	# 	print "Sent \"" + line[5:len(line)-3] + "\" to " + line[len(line)-2] + ", System time is: " + str(time.time())
+	# 	time.sleep(1)
+	# f.close()
 
-
-
-while connection == 0:
-	data = s.recv(BUFFER_SIZE)
-	if len(data) > 0:
-		print data
-		connection = 1
+	thread.start_new_thread(readInputs, ())
+	thread.start_new_thread(readData_server, ())
+	thread.start_new_thread(readData_sequencer, ())
 		
-f = open('nodeBCommands.txt', 'r')
-for line in f:
-	s.send(line)
-	print "Sent \"" + line[5:len(line)-3] + "\" to " + line[len(line)-2] + ", System time is: " + str(time.time())
-	time.sleep(1)
-f.close()
+	while 1:
+		running = 1
 
-thread.start_new_thread(readInputs, (s,))
-thread.start_new_thread(readData, ())
-	
-while 1:
-	running = 1
+main()		
