@@ -1,11 +1,11 @@
 send Hi from A B
-send Hi1 from A C
+send Hi1 from A B
 send Hi2 from A D
-insert 3 5 linear
+insert 3 5 3
 delay 20
-insert 2 1 linear
+insert 2 1 3
 delay 25
-insert 4 7 linear
+insert 4 7 3
 delay 15
-insert 3 20 linear
+insert 3 20 3
 delay 10

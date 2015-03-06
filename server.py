@@ -34,10 +34,10 @@ def send_delayed_messageD(data, delay):
 
 def broadcast(data):
 	data = data.replace("\n", "")
-	thread.start_new_thread(send_delayed_messageA, (data, randint(0,10)))
-	thread.start_new_thread(send_delayed_messageB, (data, randint(0,10)))
-	thread.start_new_thread(send_delayed_messageC, (data, randint(0,10)))
-	thread.start_new_thread(send_delayed_messageD, (data, randint(0,10)))
+	thread.start_new_thread(send_delayed_messageA, (data, randint(0,5)))
+	thread.start_new_thread(send_delayed_messageB, (data, randint(0,5)))
+	thread.start_new_thread(send_delayed_messageC, (data, randint(0,5)))
+	thread.start_new_thread(send_delayed_messageD, (data, randint(0,5)))
 
 def delay(destination, sender):
 	key = sender + destination

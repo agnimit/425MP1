@@ -43,6 +43,13 @@ def readInputs():
 			if "send" in data.lower():
 				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
 			continue
+		elif "get" in data and int((data.split(' '))[2]) == 2: #sequential consistency read. should return right away	
+			key = int((data.split(' '))[1])
+			if key in key_value.keys():
+				print "The corresponding value for key " + str(key) + " is: " + str(key_value[key])
+			else:
+				print "Key does not exist" 	
+			continue
 		if readFile == True:		
 			delay = raw_input("").split()
 		else:
@@ -57,16 +64,27 @@ def total_order():
 			message = from_sequencer[s + 1]
 			for string in from_server:
 				if message == string:
+					parsed = message.split(' ')
+					key = int(parsed[1])
 					print message	
 					if "insert" in message or "update" in message:
-						parsed = message.split(' ')
-						key = int(parsed[1])
 						value = int(parsed[2])
 						model = parsed[3]
 						key_value[key] = value	
 						del from_sequencer[s + 1]
 						from_server.remove(message)
-						s = s + 1
+					if "delete" in message:
+						if key in key_value.keys():
+							print "Delete of key " + str(key) + " was succesful!"
+							del key_value[key]
+						else:
+							print "Key does not exist"	
+					if "get" in message:
+						if key in key_value.keys():
+							print "The corresponding value for key " + str(key) + " is: " + str(key_value[key])
+						else:
+							print "Key does not exist" 		
+					s = s + 1		
 		else:
 			match = 0		
 def readData_server():
@@ -87,8 +105,12 @@ def readData_sequencer():
 			data = data.replace("\n", "")
 			#print "Received " + data
 			parsed = data.split(' ')
-			sequence_num = int(parsed[4])
-			message = parsed[0] + " " + parsed[1] + " " + parsed[2] + " " + parsed[3]
+			if "insert" in data or "update" in data:
+				sequence_num = int(parsed[4])
+				message = parsed[0] + " " + parsed[1] + " " + parsed[2] + " " + parsed[3]
+			elif "get" or "delete" in data:	
+				sequence_num = int(parsed[3])
+				message = parsed[0] + " " + parsed[1] + " " + parsed[2]
 			from_sequencer[sequence_num] = message
 			total_order()
 			data = ""
