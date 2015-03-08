@@ -12,18 +12,80 @@ TCP_PORT_SEQUENCER = 8003
 BUFFER_SIZE = 1024
 
 key_value = {}
+eventual = {}
 from_server = []
 from_sequencer = {}
 
+def insert_and_update(key, value):
+	key_value[key] = value	
+
+def get(key):
+	if key in key_value.keys():
+		print "The corresponding value for key " + str(key) + " is: " + str(key_value[key])
+	else:
+		print "Key does not exist" 
+
+def delete(key):
+	if key in key_value.keys():
+		print "Delete of key " + str(key) + " was succesful!"
+		del key_value[key]
+	else:
+		print "Key does not exist"	
+
+def sent_eventual(data):
+	message = data[6:len(data)]
+	print data
+	parsed = message.split(' ')
+	model = int(parsed[len(parsed) - 2])
+	key = int(parsed[1])
+	eventual[message] += 1
+	if eventual[message] == (model - 2):
+		del eventual[message]
+		if "insert" in message or "update" in message:
+			value = int(parsed[2])
+			insert_and_update(key, value)
+		if "get" in message:
+			delete(key)
+		if "delete" in message:
+			delete(key)
+		print message	
+
+def received_eventual(data):
+	destination = data[0]
+	message = data[20:len(data) - 2]
+	if data[0] != "A":
+		print data
+	parsed = message.split(' ')
+	key = int(parsed[1])
+	if "insert" in message or "update" in message:
+		value = int(parsed[2])
+		insert_and_update(key, value)
+	if "get" in message:
+		delete(key)
+	if "delete" in message:
+		delete(key)
+	server.send("SendC " + message + " " + destination)	
+
 def sleep_and_send(data, delay):
 	time.sleep(float(delay))
-	sequencer.send(data + "\n")
-	server.send(data + "\n")
+	parsed = data.split(' ')
+	model = int(parsed[len(parsed) - 1])
+	if model == 1 or model == 2: #linear or sequential, so send to sequencer
+		if model == 2 and "get" in data: #sequential consistency read. do it right away
+			key = int(parsed[1])
+			get(key)
+		else:
+			sequencer.send(data + "\n")
+			server.send(data + "\n")
+	if model == 3 or model == 4: #eventual consistency
+		eventual[data] = 0
+		server.send("C eventual request: " + data +"\n")	
 
 def readInputs():
 	readFile = False
-	f = open('nodeCCommands.txt', 'r')
+	f = open('C.txt', 'r')
 	while 1:
+		data = ''
 		if readFile == False:
 			data = f.readline().replace("\n", '')
 			print data
@@ -37,21 +99,14 @@ def readInputs():
 				sys.stdout.write(str(a) + ': ' + str(key_value[a]) + '  ')	
 			sys.stdout.write("\n")	
 			continue	
-		elif len(data) > 0 and "send" in data.lower():
+		if "send" in data.lower():
 			server.send(data + "\n")
-			time.sleep(0.3)
+			time.sleep(0.2)
 			if "send" in data.lower():
 				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
-			continue
-		elif "get" in data and int((data.split(' '))[2]) == 2: #sequential consistency read. should return right away	
-			key = int((data.split(' '))[1])
-			if key in key_value.keys():
-				print "The corresponding value for key " + str(key) + " is: " + str(key_value[key])
-			else:
-				print "Key does not exist" 	
-			continue
+			continue	
 		if readFile == True:		
-			delay = raw_input("").split()
+			delay = raw_input("").split()	
 		else:
 			delay = f.readline().replace("\n", '').split()
 		thread.start_new_thread(sleep_and_send, (data, delay[1],))			
@@ -66,24 +121,16 @@ def total_order():
 				if message == string:
 					parsed = message.split(' ')
 					key = int(parsed[1])
-					print message	
+					print message[0: len(message) - 2]	
 					if "insert" in message or "update" in message:
 						value = int(parsed[2])
-						model = parsed[3]
-						key_value[key] = value	
-						del from_sequencer[s + 1]
+						insert_and_update(key, value)
 						from_server.remove(message)
-					if "delete" in message:
-						if key in key_value.keys():
-							print "Delete of key " + str(key) + " was succesful!"
-							del key_value[key]
-						else:
-							print "Key does not exist"	
 					if "get" in message:
-						if key in key_value.keys():
-							print "The corresponding value for key " + str(key) + " is: " + str(key_value[key])
-						else:
-							print "Key does not exist" 		
+						get(key)
+					if "delete" in message:
+						delete(key)		
+					del from_sequencer[s + 1]				
 					s = s + 1		
 		else:
 			match = 0		
@@ -91,9 +138,14 @@ def readData_server():
 	global server
 	while 1:
 		data = server.recv(BUFFER_SIZE)
-		if len(data) > 0 and "received" in data.lower():
+		data = data.replace("\n", "")
+		if "send" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data): #I sent the eventual request
+			sent_eventual(data)
+		elif "eventual request" in data: #I did not send, but received the eventual request
+			received_eventual(data)	
+		elif "send" in data.lower():	
 			print data[0:len(data) - 1]
-		else:
+		elif len(data) > 0:
 			from_server.append(data)	
 		data = ""
 
@@ -130,13 +182,6 @@ def main():
 		if len(data) > 0:
 			print data
 			server_connection = 1
-
-	# f = open('nodeACommands.txt', 'r')
-	# for line in f:
-	# 	server.send(line)
-	# 	print "Sent \"" + line[5:len(line)-3] + "\" to " + line[len(line)-2] + ", System time is: " + str(time.time())
-	# 	time.sleep(1)
-	# f.close()
 
 	thread.start_new_thread(readInputs, ())
 	thread.start_new_thread(readData_server, ())

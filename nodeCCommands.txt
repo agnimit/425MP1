@@ -1,3 +1,7 @@
 send Hi from C A
 send Hi1 from C B
 send Hi2 from C D
+insert 12 99 3
+delay 3
+delete 2 3
+delay 20
