@@ -33,14 +33,29 @@ def delete(key):
 		print "Key does not exist"	
 
 def sent_eventual(data):
-	message = data[6:len(data)]
-	print data
-	parsed = message.split(' ')
-	model = int(parsed[len(parsed) - 2])
-	key = int(parsed[1])
-	eventual[message] += 1
-	if eventual[message] == (model - 2):
-		del eventual[message]
+	message = data[10:data.index("from") - 2]
+	if message in eventual.keys():
+		parsed = message.split(' ')
+		model = int(parsed[len(parsed) - 1])
+		key = int(parsed[1])
+		eventual[message] += 1
+		if eventual[message] >= (model - 2):
+			del eventual[message]
+			if "insert" in message or "update" in message:
+				value = int(parsed[2])
+				insert_and_update(key, value)
+			if "get" in message:
+				delete(key)
+			if "delete" in message:
+				delete(key)
+			print message	
+
+def received_eventual(data):
+	destination = data[0]
+	message = data[20:len(data)]
+	if data[0] != "D":
+		parsed = message.split(' ')
+		key = int(parsed[1])
 		if "insert" in message or "update" in message:
 			value = int(parsed[2])
 			insert_and_update(key, value)
@@ -48,23 +63,8 @@ def sent_eventual(data):
 			delete(key)
 		if "delete" in message:
 			delete(key)
-		print message	
-
-def received_eventual(data):
-	destination = data[0]
-	message = data[20:len(data) - 2]
-	if data[0] != "D":
-		print data
-	parsed = message.split(' ')
-	key = int(parsed[1])
-	if "insert" in message or "update" in message:
-		value = int(parsed[2])
-		insert_and_update(key, value)
-	if "get" in message:
-		delete(key)
-	if "delete" in message:
-		delete(key)
-	server.send("SendD " + message + " " + destination)	
+		print data[20:len(data) - 2]		
+		server.send("SenD " + message + " " + destination + "\n")	
 
 def sleep_and_send(data, delay):
 	time.sleep(float(delay))
@@ -83,7 +83,7 @@ def sleep_and_send(data, delay):
 
 def readInputs():
 	readFile = False
-	f = open('A.txt', 'r')
+	f = open('D.txt', 'r')
 	while 1:
 		data = ''
 		if readFile == False:
@@ -139,11 +139,12 @@ def readData_server():
 	while 1:
 		data = server.recv(BUFFER_SIZE)
 		data = data.replace("\n", "")
-		if "send" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data): #I sent the eventual request
+		if "received" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data): #I sent the eventual request
+			print data
 			sent_eventual(data)
 		elif "eventual request" in data: #I did not send, but received the eventual request
 			received_eventual(data)	
-		elif "send" in data.lower():	
+		elif "received" in data.lower():	
 			print data[0:len(data) - 1]
 		elif len(data) > 0:
 			from_server.append(data)	

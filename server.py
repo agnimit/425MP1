@@ -33,7 +33,6 @@ def send_delayed_messageD(data, delay):
 	conn4.send(data + "\n")
 
 def broadcast(data):
-	data = data.replace("\n", "")
 	thread.start_new_thread(send_delayed_messageA, (data, randint(0,5)))
 	thread.start_new_thread(send_delayed_messageB, (data, randint(0,5)))
 	thread.start_new_thread(send_delayed_messageC, (data, randint(0,5)))
@@ -61,8 +60,8 @@ def delay(destination, sender):
 	info[key][0].release()
 
 def parse_server_message(command, max_delay, sender):
-	message = command[5:len(command) - 3]
-	destination = command[len(command) - 2]
+	message = command[5:len(command) - 2]
+	destination = command[len(command) - 1]
 	final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
 	if destination == 'A':
 		conn1.send(final_message + "\n")
@@ -98,10 +97,10 @@ def receive_from_nodeA():
 	counter_mutex.release()
 	while 1:
 		data = conn1.recv(BUFFER_SIZE)
-		if "send" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data):
-			broadcast(data)
-		elif len(data) > 0 and "send" in data.lower():
-			destination = data[len(data)-2]
+		data = data.replace("\n", "")
+		if "sen" in data.lower():
+			print data
+			destination = data[len(data)-1]
 			key = "A" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
@@ -125,11 +124,11 @@ def receive_from_nodeB():
 	counter+=1
 	counter_mutex.release()
 	while 1:
-		data = conn1.recv(BUFFER_SIZE)
-		if "send" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data):
-			broadcast(data)
-		elif len(data) > 0 and "send" in data.lower():
-			destination = data[len(data)-2]
+		data = conn2.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
+		if "sen" in data.lower():
+			print data
+			destination = data[len(data)-1]
 			key = "B" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
@@ -153,11 +152,11 @@ def receive_from_nodeC():
 	counter+=1
 	counter_mutex.release()
 	while 1:
-		data = conn1.recv(BUFFER_SIZE)
-		if "send" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data):
-			broadcast(data)
-		elif len(data) > 0 and "send" in data.lower():
-			destination = data[len(data)-2]
+		data = conn3.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
+		if "sen" in data.lower():
+			print data
+			destination = data[len(data)-1]
 			key = "C" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
@@ -181,11 +180,11 @@ def receive_from_nodeD():
 	counter+=1
 	counter_mutex.release()
 	while 1:
-		data = conn1.recv(BUFFER_SIZE)
-		if "send" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data):
-			broadcast(data)
-		elif len(data) > 0 and "send" in data.lower():
-			destination = data[len(data)-2]
+		data = conn4.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
+		if "sen" in data.lower():
+			print data
+			destination = data[len(data)-1]
 			key = "D" + destination
 			queue = info[key][2]
 			queue.append([data, time.time() + randint(0, 5)])
@@ -193,7 +192,7 @@ def receive_from_nodeD():
 		elif len(data) > 0:
 			broadcast(data)		
 		data = ""
-		count+=1	
+		count+=1
 
 def main():
 	global counter
