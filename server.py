@@ -63,9 +63,8 @@ def parse_server_message(command, max_delay, sender):
 
 	message = command[5:len(command) - 2]
 	destination = command[len(command) - 1]
-	print command
 	if "value,time" in command:
-		message = commande[5:12]
+		message = command[5:12]
 		temp = command.split(" ")
 		value_here = temp[6]
 		time_here = temp[7]

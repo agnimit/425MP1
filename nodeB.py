@@ -8,7 +8,7 @@ import sys
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 4002
-TCP_PORT_SEQUENCER = 8001
+TCP_PORT_SEQUENCER = 8002
 BUFFER_SIZE = 1024
 
 key_value = {}
@@ -17,8 +17,8 @@ eventual_read = {}
 from_server = []
 from_sequencer = {}
 
-def insert_and_update(key, value, timing):
-	key_value[key] = (value, timing)
+def insert_and_update(key, value):
+	key_value[key] = (value, time.time())
 
 def get(key):
 	if key in key_value.keys():
@@ -45,7 +45,7 @@ def sent_eventual(data):
 			eventual[message] += 1
 			if eventual[message] >= (model - 2):
 				value = int(parsed[2])
-				insert_and_update(key, value, timing)
+				insert_and_update(key, value)
 				del eventual[message]
 				print message	
 	if message in eventual_read.keys():
@@ -62,7 +62,8 @@ def sent_eventual(data):
 					curr = float(parse[len(parse)-1])
 					if max_time < curr:
 						max_time = curr
-						high_message = parse[1:5] # remove timing
+						high_message = parse[1] + " " + parse[2] + " " + parse[3] # remove timing
+				del eventual_read[message]
 			print high_message
 	if "delete" in message:
 		delete(key)
@@ -75,19 +76,21 @@ def received_eventual(data):
 	if data[0] != "B":
 		parsed = message.split(' ')
 		key = int(parsed[1])
-		print data[20:len(data) - 2]		
 		if "insert" in message or "update" in message:
+			print data[20:len(data) - 2]		
 			value = int(parsed[2])
-			insert_and_update(key, value, timing)
-			server.send("SenB " + message + " " + destination + "\n")	
+			insert_and_update(key, value)
+			server.send("SenB " + message + " " + destination + "\n")			
 		if "get" in message:
+			print data[20:len(data) - 1]		
 			if key in key_value:
 				(val, curr_time) = key_value[key]
-				server.send("SenB " + message + " value,time is " + val + " " + curr_time + " " + destination + "\n") 
+				server.send("SenB " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 
 		if "delete" in message:
+			print data[20:len(data) - 2]		
 			delete(key)
-			server.send("SenB " + message + " " + destination + "\n")
-		print data[20:len(data) - 2]		
+			server.send("SenB " + message + " " + destination + "\n")		
+
 
 def sleep_and_send(data, delay):
 	time.sleep(float(delay))
@@ -167,9 +170,9 @@ def readData_server():
 		data = server.recv(BUFFER_SIZE)
 		data = data.replace("\n", "")
 		if "received" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data): #I sent the eventual request
-			print data
 			sent_eventual(data)
 		elif "eventual request" in data: #I did not send, but received the eventual request
+			print data
 			received_eventual(data)	
 		elif "received" in data.lower():	
 			print data[0:len(data) - 1]
