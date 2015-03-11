@@ -82,7 +82,7 @@ def received_eventual(data):
 			insert_and_update(key, value)
 			server.send("SenB " + message + " " + destination + "\n")			
 		if "get" in message:
-			print data[20:len(data) - 1]		
+			print data[20:len(data)]		
 			if key in key_value:
 				(val, curr_time) = key_value[key]
 				server.send("SenB " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 
@@ -170,9 +170,9 @@ def readData_server():
 		data = server.recv(BUFFER_SIZE)
 		data = data.replace("\n", "")
 		if "received" in data.lower() and ("insert" in data or "get" in data or "update" in data or "delete" in data): #I sent the eventual request
+			print data
 			sent_eventual(data)
 		elif "eventual request" in data: #I did not send, but received the eventual request
-			print data
 			received_eventual(data)	
 		elif "received" in data.lower():	
 			print data[0:len(data) - 1]

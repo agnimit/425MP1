@@ -82,7 +82,7 @@ def received_eventual(data):
 			insert_and_update(key, value)
 			server.send("SenC " + message + " " + destination + "\n")	
 		if "get" in message:
-			print data[20:len(data) - 2]		
+			print data[20:len(data)]		
 			if key in key_value:
 				(val, curr_time) = key_value[key]
 				server.send("SenC " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 

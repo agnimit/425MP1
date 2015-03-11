@@ -63,6 +63,7 @@ def sent_eventual(data):
 					if max_time < curr:
 						max_time = curr
 						high_message = parse[1] + " " + parse[2] + " " + parse[3] # remove timing
+						print str(max_time)
 				del eventual_read[message]
 			print high_message
 	if "delete" in message:
@@ -83,7 +84,7 @@ def received_eventual(data):
 			server.send("SenA " + message + " " + destination + "\n")	
 		if "get" in message:
 			if key in key_value:
-				print data[20:len(data) - 1]		
+				print data[20:len(data)]		
 				(val, curr_time) = key_value[key]
 				server.send("SenA " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 
 		if "delete" in message:
