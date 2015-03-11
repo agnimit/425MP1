@@ -63,7 +63,6 @@ def sent_eventual(data):
 					if max_time < curr:
 						max_time = curr
 						high_message = parse[1] + " " + parse[2] + " " + parse[3] # remove timing
-						print str(max_time)
 				del eventual_read[message]
 			print high_message
 	if "delete" in message:
@@ -83,8 +82,7 @@ def received_eventual(data):
 			insert_and_update(key, value)
 			server.send("SenA " + message + " " + destination + "\n")	
 		if "get" in message:
-			if key in key_value:
-				print data[20:len(data)]		
+			if key in key_value:		
 				(val, curr_time) = key_value[key]
 				server.send("SenA " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 
 		if "delete" in message:
@@ -134,6 +132,9 @@ def readInputs():
 			if "send" in data.lower():
 				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
 			continue	
+		if "get" in data.lower() and int(data[len(data)-1]) == 2:
+			get(int(data[len(data)-3]))
+			continue
 		if readFile == True:		
 			delay = raw_input("").split()	
 		else:

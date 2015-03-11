@@ -81,8 +81,7 @@ def received_eventual(data):
 			value = int(parsed[2])
 			insert_and_update(key, value)
 			server.send("SenB " + message + " " + destination + "\n")			
-		if "get" in message:
-			print data[20:len(data)]		
+		if "get" in message:		
 			if key in key_value:
 				(val, curr_time) = key_value[key]
 				server.send("SenB " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 
@@ -134,6 +133,9 @@ def readInputs():
 			if "send" in data.lower():
 				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
 			continue	
+		if "get" in data.lower() and int(data[len(data)-1]) == 2:
+			get(int(data[len(data)-3]))
+			continue
 		if readFile == True:		
 			delay = raw_input("").split()	
 		else:
