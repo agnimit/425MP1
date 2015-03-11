@@ -8,20 +8,21 @@ import sys
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 4002
-TCP_PORT_SEQUENCER = 8002
+TCP_PORT_SEQUENCER = 8001
 BUFFER_SIZE = 1024
 
 key_value = {}
 eventual = {}
+eventual_read = {}
 from_server = []
 from_sequencer = {}
 
-def insert_and_update(key, value):
-	key_value[key] = value	
+def insert_and_update(key, value, timing):
+	key_value[key] = (value, timing)
 
 def get(key):
 	if key in key_value.keys():
-		print "The corresponding value for key " + str(key) + " is: " + str(key_value[key])
+		print "The corresponding value for key " + str(key) + " is: " + str(key_value[key][0])
 	else:
 		print "Key does not exist" 
 
@@ -34,37 +35,59 @@ def delete(key):
 
 def sent_eventual(data):
 	message = data[10:data.index("from") - 2]
+	parsed = message.split(' ')
+	model = int(parsed[len(parsed) - 1])
+	key = int(parsed[1])
+	split_data = data.split(' ')
+	timing = float(split_data[len(split_data)-1])
 	if message in eventual.keys():
-		parsed = message.split(' ')
-		model = int(parsed[len(parsed) - 1])
-		key = int(parsed[1])
-		eventual[message] += 1
-		if eventual[message] >= (model - 2):
-			del eventual[message]
-			if "insert" in message or "update" in message:
+		if "insert" in message or "update" in message:
+			eventual[message] += 1
+			if eventual[message] >= (model - 2):
 				value = int(parsed[2])
-				insert_and_update(key, value)
-			if "get" in message:
-				delete(key)
-			if "delete" in message:
-				delete(key)
-			print message	
+				insert_and_update(key, value, timing)
+				del eventual[message]
+				print message	
+	if message in eventual_read.keys():
+		if "get" in message:		
+			high_message = ""
+			eventual_read[message].append(data)
+			if len(eventual_read[message]) >= (model-2):
+				curr_val, curr_time = key_value[key]
+				eventual_read[message].append("Received \"get 3 4\" from B, value is " + str(curr_val) + " Max delay is 0 s, system time is " + str(curr_time)) 
+				max_time = -1
+				best_message = ""
+				for i in eventual_read[message]:
+					parse = i.split(" ")
+					curr = float(parse[len(parse)-1])
+					if max_time < curr:
+						max_time = curr
+						high_message = parse[1:5] # remove timing
+			print high_message
+	if "delete" in message:
+		delete(key)
 
 def received_eventual(data):
 	destination = data[0]
 	message = data[20:len(data)]
+	split_data = data.split(' ')
+	timing = float(split_data[len(split_data)-1])
 	if data[0] != "B":
 		parsed = message.split(' ')
 		key = int(parsed[1])
+		print data[20:len(data) - 2]		
 		if "insert" in message or "update" in message:
 			value = int(parsed[2])
-			insert_and_update(key, value)
+			insert_and_update(key, value, timing)
+			server.send("SenB " + message + " " + destination + "\n")	
 		if "get" in message:
-			delete(key)
+			if key in key_value:
+				(val, curr_time) = key_value[key]
+				server.send("SenB " + message + " value,time is " + val + " " + curr_time + " " + destination + "\n") 
 		if "delete" in message:
 			delete(key)
+			server.send("SenB " + message + " " + destination + "\n")
 		print data[20:len(data) - 2]		
-		server.send("SenB " + message + " " + destination + "\n")	
 
 def sleep_and_send(data, delay):
 	time.sleep(float(delay))
@@ -78,7 +101,10 @@ def sleep_and_send(data, delay):
 			sequencer.send(data + "\n")
 			server.send(data + "\n")
 	if model == 3 or model == 4: #eventual consistency
-		eventual[data] = 0
+		if "update" in data or "insert" in data:
+			eventual[data] = 0
+		if "get" in data:
+			eventual_read[data] = []
 		server.send("B eventual request: " + data +"\n")	
 
 def readInputs():
@@ -96,8 +122,8 @@ def readInputs():
 			data = raw_input("")
 		if "show_all" in data:
 			for a in key_value:
-				sys.stdout.write(str(a) + ': ' + str(key_value[a]) + '  ')	
-			sys.stdout.write("\n")	
+				sys.stdout.write(str(a) + ': ' + str(key_value[a][0]) + '  ')	
+			sys.stdout.write("\n")
 			continue	
 		if "send" in data.lower():
 			server.send(data + "\n")
@@ -124,7 +150,7 @@ def total_order():
 					print message[0: len(message) - 2]	
 					if "insert" in message or "update" in message:
 						value = int(parsed[2])
-						insert_and_update(key, value)
+						insert_and_update(key, value, 0)
 						from_server.remove(message)
 					if "get" in message:
 						get(key)
@@ -134,6 +160,7 @@ def total_order():
 					s = s + 1		
 		else:
 			match = 0		
+
 def readData_server():
 	global server
 	while 1:

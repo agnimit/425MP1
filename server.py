@@ -60,9 +60,18 @@ def delay(destination, sender):
 	info[key][0].release()
 
 def parse_server_message(command, max_delay, sender):
+
 	message = command[5:len(command) - 2]
 	destination = command[len(command) - 1]
-	final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
+	print command
+	if "value,time" in command:
+		message = commande[5:12]
+		temp = command.split(" ")
+		value_here = temp[6]
+		time_here = temp[7]
+		final_message = "Received \"" + message + "\" from " + sender + ", value is " + str(value_here) + " Max delay is " + str(max_delay) + " s, system time is " + str(time_here)
+	else:
+		final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
 	if destination == 'A':
 		conn1.send(final_message + "\n")
 	if destination == 'B':
