@@ -63,12 +63,14 @@ def parse_server_message(command, max_delay, sender):
 
 	message = command[5:len(command) - 2]
 	destination = command[len(command) - 1]
-	if "value,time" in command:
-		message = command[5:12]
+	if "value" in command and "time" in command:
 		temp = command.split(" ")
-		value_here = temp[6]
+		print temp
+		value_here = temp[5]
 		time_here = temp[7]
-		final_message = "Received \"" + message + "\" from " + sender + ", value is " + str(value_here) + " Max delay is " + str(max_delay) + " s, system time is " + str(time_here)
+		final_message = "Received \"" + message + "\" from " + sender
+		print message
+		print final_message
 	else:
 		final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
 	if destination == 'A':

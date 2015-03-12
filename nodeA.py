@@ -36,11 +36,10 @@ def delete(key):
 def sent_eventual(data):
 	message = data[10:data.index("from") - 2]
 	parsed = message.split(' ')
-	model = int(parsed[len(parsed) - 1])
 	key = int(parsed[1])
-	split_data = data.split(' ')
-	timing = float(split_data[len(split_data)-1])
-	if message in eventual.keys():
+	k = parsed[0] + " " + parsed[1] + " " + parsed[2]
+	if "get" not in message and message in eventual.keys():
+		model = int(parsed[len(parsed) - 1])
 		if "insert" in message or "update" in message:
 			eventual[message] += 1
 			if eventual[message] >= (model - 2):
@@ -48,23 +47,26 @@ def sent_eventual(data):
 				insert_and_update(key, value)
 				del eventual[message]
 				print message	
-	if message in eventual_read.keys():
-		if "get" in message:		
+	elif k in eventual_read.keys():
+		if "get" in message and key in key_value.keys():
+			model = int(parsed[2])		
 			high_message = ""
-			eventual_read[message].append(data)
-			if len(eventual_read[message]) >= (model-2):
+			eventual_read[k].append(message)
+			if len(eventual_read[k]) == (model-2):
 				curr_val, curr_time = key_value[key]
-				eventual_read[message].append("Received \"get 3 4\" from A, value is " + str(curr_val) + " Max delay is 0 s, system time is " + str(curr_time)) 
+				eventual_read[k].append("get " + str(key) + " " + str(curr_val) + " " + str(curr_time))
+				print "Local key: " +  str(key) + ", value: " + str(curr_val) + ", timestamp: " + str(curr_time) 
 				max_time = -1
-				best_message = ""
-				for i in eventual_read[message]:
+				for i in eventual_read[k]:
 					parse = i.split(" ")
 					curr = float(parse[len(parse)-1])
 					if max_time < curr:
 						max_time = curr
-						high_message = parse[1] + " " + parse[2] + " " + parse[3] # remove timing
-				del eventual_read[message]
-			print high_message
+						high_message = "The read of key " + parse[1] + " resulted in value " + parse[2] + " with timestamp " + str(max_time)
+				del eventual_read[k]
+				print high_message
+		elif "get" in message:
+			print "Key does not exist"
 	if "delete" in message:
 		delete(key)
 
@@ -84,7 +86,7 @@ def received_eventual(data):
 		if "get" in message:
 			if key in key_value:		
 				(val, curr_time) = key_value[key]
-				server.send("SenA " + message + " value,time is " + str(val) + " " + str(curr_time) + " " + destination + "\n") 
+				server.send("SenA " + message + " value: " + str(val) + " time: " + str(curr_time) + " " + destination + "\n") 
 		if "delete" in message:
 			print data[20:len(data) - 2]		
 			delete(key)
@@ -95,16 +97,15 @@ def sleep_and_send(data, delay):
 	parsed = data.split(' ')
 	model = int(parsed[len(parsed) - 1])
 	if model == 1 or model == 2: #linear or sequential, so send to sequencer
-		if model == 2 and "get" in data: #sequential consistency read. do it right away
-			key = int(parsed[1])
-			get(key)
-		else:
-			sequencer.send(data + "\n")
-			server.send(data + "\n")
+		sequencer.send(data + "\n")
+		server.send(data + "\n")
 	if model == 3 or model == 4: #eventual consistency
 		if "update" in data or "insert" in data:
 			eventual[data] = 0
 		if "get" in data:
+			if int(parsed[1]) not in key_value.keys():
+				print "Key does not exist"
+				return
 			eventual_read[data] = []
 		server.send("A eventual request: " + data +"\n")	
 
@@ -133,7 +134,9 @@ def readInputs():
 				print "Sent \"" + data[5:len(data)-2] + "\" to " + data[len(data)-1] + ", System time is: " + str(time.time())
 			continue	
 		if "get" in data.lower() and int(data[len(data)-1]) == 2:
-			get(int(data[len(data)-3]))
+			parsed = data.split(' ')
+			key = int(parsed[1])
+			get(key)
 			continue
 		if readFile == True:		
 			delay = raw_input("").split()	
@@ -154,7 +157,7 @@ def total_order():
 					print message[0: len(message) - 2]	
 					if "insert" in message or "update" in message:
 						value = int(parsed[2])
-						insert_and_update(key, value, 0)
+						insert_and_update(key, value)
 						from_server.remove(message)
 					if "get" in message:
 						get(key)
