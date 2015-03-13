@@ -127,6 +127,9 @@ def readInputs():
 				sys.stdout.write(str(a) + ': ' + str(key_value[a][0]) + '  ')	
 			sys.stdout.write("\n")
 			continue	
+		if "search" in data:
+			data += " C"
+			server.send(data + "\n")
 		if "send" in data.lower():
 			server.send(data + "\n")
 			time.sleep(0.2)
@@ -180,6 +183,17 @@ def readData_server():
 			received_eventual(data)	
 		elif "received" in data.lower():	
 			print data[0:len(data) - 1]
+		elif "search" in data:
+			parsed = data.split(' ')
+			key = int(parsed[1])
+			destination = parsed[2]
+			if key in key_value.keys():
+				message = "C has key " + str(key)
+			else:
+				message = "C does NOT have key " + str(key)
+			server.send("Send " + message + " " + destination)	
+		elif "has" in data or "have" in data:
+			print data				
 		elif len(data) > 0:
 			from_server.append(data)	
 		data = ""

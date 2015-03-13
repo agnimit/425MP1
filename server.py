@@ -65,12 +65,11 @@ def parse_server_message(command, max_delay, sender):
 	destination = command[len(command) - 1]
 	if "value" in command and "time" in command:
 		temp = command.split(" ")
-		print temp
 		value_here = temp[5]
 		time_here = temp[7]
 		final_message = "Received \"" + message + "\" from " + sender
-		print message
-		print final_message
+	elif "has" in message or "have" in message:
+		final_message = message	
 	else:
 		final_message = "Received \"" + message + "\" from " + sender + ", Max delay is " + str(max_delay) + " s, system time is " + str(time.time())
 	if destination == 'A':
@@ -108,13 +107,14 @@ def receive_from_nodeA():
 	while 1:
 		data = conn1.recv(BUFFER_SIZE)
 		data = data.replace("\n", "")
-		if "sen" in data.lower():
+		if "sen" in data.lower() and data[0] != 'A':
 			print data
 			destination = data[len(data)-1]
-			key = "A" + destination
-			queue = info[key][2]
-			queue.append([data, time.time() + randint(0, 5)])
-			thread.start_new_thread(delay, (destination, "A"))
+			if destination != "A":
+				key = "A" + destination
+				queue = info[key][2]
+				queue.append([data, time.time() + randint(0, 5)])
+				thread.start_new_thread(delay, (destination, "A"))
 		elif len(data) > 0:
 			broadcast(data)		
 		data = ""
@@ -139,10 +139,11 @@ def receive_from_nodeB():
 		if "sen" in data.lower():
 			print data
 			destination = data[len(data)-1]
-			key = "B" + destination
-			queue = info[key][2]
-			queue.append([data, time.time() + randint(0, 5)])
-			thread.start_new_thread(delay, (destination, "B"))
+			if destination != "B":
+				key = "B" + destination
+				queue = info[key][2]
+				queue.append([data, time.time() + randint(0, 5)])
+				thread.start_new_thread(delay, (destination, "B"))
 		elif len(data) > 0:
 			broadcast(data)		
 		data = ""
@@ -167,10 +168,11 @@ def receive_from_nodeC():
 		if "sen" in data.lower():
 			print data
 			destination = data[len(data)-1]
-			key = "C" + destination
-			queue = info[key][2]
-			queue.append([data, time.time() + randint(0, 5)])
-			thread.start_new_thread(delay, (destination, "C"))
+			if destination != "C":
+				key = "C" + destination
+				queue = info[key][2]
+				queue.append([data, time.time() + randint(0, 5)])
+				thread.start_new_thread(delay, (destination, "C"))
 		elif len(data) > 0:
 			broadcast(data)		
 		data = ""
@@ -195,10 +197,11 @@ def receive_from_nodeD():
 		if "sen" in data.lower():
 			print data
 			destination = data[len(data)-1]
-			key = "D" + destination
-			queue = info[key][2]
-			queue.append([data, time.time() + randint(0, 5)])
-			thread.start_new_thread(delay, (destination, "D"))
+			if destination != "D":
+				key = "D" + destination
+				queue = info[key][2]
+				queue.append([data, time.time() + randint(0, 5)])
+				thread.start_new_thread(delay, (destination, "D"))
 		elif len(data) > 0:
 			broadcast(data)		
 		data = ""
