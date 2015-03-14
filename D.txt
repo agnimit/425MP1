@@ -1,0 +1,7 @@
+insert 1 1 1
+delay 1
+insert 2 2 1
+delay 2
+insert 3 3 1
+delay 3
+search 19

@@ -1,0 +1,10 @@
+insert 22 11 1
+delay 1
+insert 10 103 1
+delay 2
+insert 19 6 1
+delay 5
+insert 38 19 12
+delay 0
+update 20 5
+delay 3

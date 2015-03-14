@@ -1,0 +1,9 @@
+Rohit Mukerji: rmukerj2
+Nimit Agrawal: nagrawa3
+
+Configuration File
+
+MAX = 10
+Using TCP
+Server.py		IP = 127.0.0.1 	Ports: 4001 (for nodeA), 4002 (for nodeB), 4003 (for nodeC), 4004 (for nodeD)
+Sequencer.py	IP = 127.0.0.1 	Ports: 8001 (for nodeA), 8002 (for nodeB), 8003 (for nodeC), 8004 (for nodeD)

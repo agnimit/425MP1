@@ -1,0 +1,7 @@
+insert 34 17 1
+delay 10
+insert 67 89 1
+delay 1
+send hello A
+delete 100
+delay 0
