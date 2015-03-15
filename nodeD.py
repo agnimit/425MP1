@@ -59,7 +59,7 @@ def sent_eventual(data):
 			eventual[message] += 1
 			if eventual[message] == (model - 2): #check if the number of acknowledgements is equal to the model - 2 i.e. 1 for model 3
 				del eventual[message]
-				print message
+				print message + " completed!"
 				recieved = True		
 	elif k in eventual_read.keys():
 		if "get" in message and key in key_value.keys(): #eventual read
