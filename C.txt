@@ -3,5 +3,5 @@ delay 10
 insert 67 89 1
 delay 1
 send hello A
-delete 100
+delete 100 1
 delay 0

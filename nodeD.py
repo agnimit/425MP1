@@ -7,6 +7,7 @@ import sys
 import re
 from threading import Thread, Lock
 eventual_mutex = Lock()
+send_mutex = Lock()	
 
 MAX = 10
 TCP_IP = '127.0.0.1'
@@ -45,6 +46,7 @@ def delete(key):
 
 #I called an insert, update, delete, or get method using model 3 or 4
 def sent_eventual(data):
+	global recieved
 	eventual_mutex.acquire()
 	message = data[10:data.index("from") - 2]
 	parsed = message.split(' ')
@@ -57,7 +59,8 @@ def sent_eventual(data):
 			eventual[message] += 1
 			if eventual[message] == (model - 2): #check if the number of acknowledgements is equal to the model - 2 i.e. 1 for model 3
 				del eventual[message]
-				print message	
+				print message
+				recieved = True		
 	elif k in eventual_read.keys():
 		if "get" in message and key in key_value.keys(): #eventual read
 			model = int(parsed[2])		
@@ -83,13 +86,16 @@ def sent_eventual(data):
 					rep_val, rep_time = key_value[key]
 					print "Read inconsistency repair on key: " + str(key) + ". Value: " + str(rep_val) + " Timestamp: " + str(rep_time)
 					del eventual_read[k]
+					recieved = True	
 		elif "get" in message:
 			print "Key does not exist"
+			recieved = True	
 	global deleted			
 	if "delete" in message: #eventual delete
 		if deleted == False:
 			delete(key)
 			deleted = True
+			recieved = True	
 	eventual_mutex.release()	
 
 #I revieved an eventual consistency command from another node
@@ -117,7 +123,8 @@ def received_eventual(data):
 
 #function to simulate the delays by sleeping and sends message to server
 def sleep_and_send(data, delay):
-	time.sleep(float(delay))
+	#time.sleep(float(delay))
+	send_mutex.acquire()
 	parsed = data.split(' ')
 	model = int(parsed[len(parsed) - 1])
 	if model == 1 or model == 2: #linear or sequential, so send to sequencer
@@ -132,7 +139,8 @@ def sleep_and_send(data, delay):
 				print "Key does not exist"
 				return
 			eventual_read[data] = []
-		server.send("D eventual request: " + data +"\n")	
+		server.send("D eventual request: " + data +"\n")
+	send_mutex.release()		
 
 #function to read inputs whether they come from file or typed in by user
 def readInputs():
@@ -170,11 +178,16 @@ def readInputs():
 			delay = raw_input("").split()	
 		else:
 			delay = f.readline().replace("\n", '').split()
-		time.sleep(float(delay[1]))	
-		thread.start_new_thread(sleep_and_send, (data, 0))				
+		thread.start_new_thread(sleep_and_send, (data, 0))
+		global recieved
+		while recieved == False: #wait
+			b = 1
+		recieved = False		
+		time.sleep(float(delay[1]))	#sleep to allow for delay between commands.			
 
 def total_order(): #method which gets messages from sequencer and central server and executes them in a totally ordered manner
 	global s
+	global recieved
 	match = 1
 	while match == 1:
 		if (s+1) in from_sequencer.keys(): #checks to see if the next message in sequence has already been received
@@ -183,7 +196,7 @@ def total_order(): #method which gets messages from sequencer and central server
 				if message == string:
 					parsed = message.split(' ')
 					key = int(parsed[1])
-					print message[0: len(message) - 2]	
+					print message[0: len(message) - 2] + " completed!"	
 					if "insert" in message or "update" in message:
 						value = int(parsed[2])
 						insert_and_update(key, value)
@@ -193,7 +206,8 @@ def total_order(): #method which gets messages from sequencer and central server
 					if "delete" in message:
 						delete(key)		
 					del from_sequencer[s + 1]				
-					s = s + 1 #increments s so we can get the next message in sequence		
+					s = s + 1 #increments s so we can get the next message in sequence	
+					recieved = True	
 		else:
 			match = 0		
 
@@ -222,6 +236,7 @@ def readData_server():
 		elif "has" in data or "have" in data: #got reply from search command
 			print data				
 		elif len(data) > 0: #we send all other messages to server. This includes all messages from models 1 and 2
+			#print "From server: " + data
 			from_server.append(data)	
 		data = ""
 
@@ -229,11 +244,13 @@ def readData_server():
 def readData_sequencer():
 	global sequencer
 	while 1:
-		data = sequencer.recv(BUFFER_SIZE)
+		data = sequencer.recv(100)
 		data = data.replace("\n", "")
+		data = data.replace(".", "")
 		if len(data) > 0:
 			parsed = data.split(' ')
 			if "insert" in data or "update" in data:
+				#print "From sequencer: " + data
 				if re.search('[a-zA-Z]', parsed[4]): #makes sure that string doesn't consist of any alpha characters
 					continue
 				sequence_num = int(parsed[4])
@@ -249,8 +266,10 @@ def main():
 	global server
 	global sequencer
 	global s
+	global recieved
 	global deleted
 	deleted = False
+	recieved = False
 	s = 0
 	#code to connect myself to server and sequencer
 	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

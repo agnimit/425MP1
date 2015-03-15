@@ -18,31 +18,44 @@ info = {"AB": [Lock(), 0, []], "BA": [Lock(), 0, []], "AC": [Lock(), 0, []], "CA
 		"AD": [Lock(), 0, []],  "DA": [Lock(), 0, []],  "BC": [Lock(), 0, []],  "CB": [Lock(), 0, []],  
 		"BD": [Lock(), 0, []],  "DB": [Lock(), 0, []],  "CD": [Lock(), 0, []],  "DC": [Lock(), 0, []]}
 
-counter_mutex = Lock()	
+counter_mutex = Lock()
+A_mutex = Lock()
+B_mutex = Lock()
+C_mutex = Lock()
+D_mutex = Lock()	
 #signal handler
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE,SIG_DFL) 
 
 def send_delayed_messageA(data, delay):
+	A_mutex.acquire()
 	if "search" not in data:
 		time.sleep(delay)
 	conn1.send(data + "\n")
+	A_mutex.release()
 def send_delayed_messageB(data, delay):
+	B_mutex.acquire()
 	if "search" not in data:
 		time.sleep(delay)
 	conn2.send(data + "\n")
+	B_mutex.release()
 def send_delayed_messageC(data, delay):
+	C_mutex.acquire()
 	if "search" not in data:
 		time.sleep(delay)
 	conn3.send(data + "\n")
+	C_mutex.release()
 def send_delayed_messageD(data, delay):
+	D_mutex.acquire()
 	if "search" not in data:
 		time.sleep(delay)	
 	conn4.send(data + "\n")
+	D_mutex.release()
 
 #randint(0, MAX)
 #method to broadcast data to all nodes
 def broadcast(data):
+	print data
 	thread.start_new_thread(send_delayed_messageA, (data, randint(0, MAX)))
 	thread.start_new_thread(send_delayed_messageB, (data, randint(0, MAX)))
 	thread.start_new_thread(send_delayed_messageC, (data, randint(0, MAX)))

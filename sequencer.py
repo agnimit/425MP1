@@ -16,32 +16,55 @@ BUFFER_SIZE = 200
 
 counter_mutex = Lock()
 sequence_mutex = Lock()
+A_mutex = Lock()
+B_mutex = Lock()
+C_mutex = Lock()
+D_mutex = Lock()
 
 #signal handler
 from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE,SIG_DFL) 
 
 def send_delayed_messageA(data, delay, num):
-	#time.sleep(delay)
-	conn1.send(data + " " + str(num) + "\n")
+	time.sleep(delay)
+	A_mutex.acquire()
+	message = data + " " + str(num)
+	while len(message) < 99:
+		message += "."
+	conn1.send(message + "\n")
+	A_mutex.release()
 def send_delayed_messageB(data, delay, num):
-	#time.sleep(delay)
-	conn2.send(data + " " + str(num) + "\n")
+	time.sleep(delay)
+	B_mutex.acquire()
+	message = data + " " + str(num)
+	while len(message) < 99:
+		message += "."
+	conn2.send(message + "\n")
+	B_mutex.release()
 def send_delayed_messageC(data, delay, num):
-	#time.sleep(delay)
-	conn3.send(data + " " + str(num) + "\n")
+	time.sleep(delay)
+	C_mutex.acquire()
+	message = data + " " + str(num)
+	while len(message) < 99:
+		message += "."
+	conn3.send(message + "\n")
+	C_mutex.release()
 def send_delayed_messageD(data, delay, num):
-	#time.sleep(delay)	
-	conn4.send(data + " " + str(num) + "\n")
+	time.sleep(delay)
+	D_mutex.acquire()	
+	message = data + " " + str(num)
+	while len(message) < 99:
+		message += "."
+	conn4.send(message + "\n")
+	D_mutex.release()
 
 #method to broadcast messages to all nodes
 def broadcast(data, num):
-	data = data.replace("\n", "")
-	print data
-	thread.start_new_thread(send_delayed_messageA, (data, randint(0,MAX), num))
-	thread.start_new_thread(send_delayed_messageB, (data, randint(0,MAX), num))
-	thread.start_new_thread(send_delayed_messageC, (data, randint(0,MAX), num))
-	thread.start_new_thread(send_delayed_messageD, (data, randint(0,MAX), num))
+	print data + " " + str(num)
+	thread.start_new_thread(send_delayed_messageA, (data, randint(2, MAX), num))
+	thread.start_new_thread(send_delayed_messageB, (data, randint(2, MAX), num))
+	thread.start_new_thread(send_delayed_messageC, (data, randint(2, MAX), num))
+	thread.start_new_thread(send_delayed_messageD, (data, randint(2, MAX), num))
 
 #method to recieve input from nodeA
 def receive_from_nodeA():
@@ -57,6 +80,7 @@ def receive_from_nodeA():
 	counter_mutex.release()
 	while 1:
 		data = conn1.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1 #increment sequence number within lock
@@ -80,6 +104,7 @@ def receive_from_nodeB():
 	counter_mutex.release()
 	while 1:
 		data = conn2.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1 #increment sequence number within lock
@@ -103,6 +128,7 @@ def receive_from_nodeC():
 	counter_mutex.release()
 	while 1:
 		data = conn3.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1 #increment sequence number within lock
@@ -126,6 +152,7 @@ def receive_from_nodeD():
 	counter_mutex.release()
 	while 1:
 		data = conn4.recv(BUFFER_SIZE)
+		data = data.replace("\n", "")
 		sequence_mutex.acquire()
 		global sequence
 		sequence += 1 #increment sequence number within lock
