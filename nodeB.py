@@ -149,7 +149,7 @@ def readInputs():
 	while 1:
 		data = ''
 		if readFile == False: #we are not done finishing reading the file
-			data = ''#f.readline().replace("\n", '')
+			data = '' #f.readline().replace("\n", '')
 			print data
 			if data == '': # we hit the end of the file
 				f.close()

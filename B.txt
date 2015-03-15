@@ -1,2 +1,6 @@
-insert 22 11 1
+insert 10 30 3
 delay 1
+insert 4 4 4
+delay 3
+get 10 3
+delay 0
