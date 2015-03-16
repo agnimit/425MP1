@@ -124,6 +124,7 @@ def received_eventual(data):
 #function to simulate the delays by sleeping and sends message to server
 def sleep_and_send(data, delay):
 	#time.sleep(float(delay))
+	global recieved
 	send_mutex.acquire()
 	parsed = data.split(' ')
 	model = int(parsed[len(parsed) - 1])
@@ -137,14 +138,17 @@ def sleep_and_send(data, delay):
 		if "get" in data:
 			if int(parsed[1]) not in key_value.keys():
 				print "Key does not exist"
+				recieved = True
+				send_mutex.release()		
 				return
-			eventual_read[data] = []
+			eventual_read[data] = []		
 		server.send("A eventual request: " + data +"\n")
 	send_mutex.release()		
 
 #function to read inputs whether they come from file or typed in by user
 def readInputs():
 	readFile = False
+	global recieved
 	f = open('A.txt', 'r')
 	while 1:
 		data = ''
@@ -179,10 +183,9 @@ def readInputs():
 		else:
 			delay = f.readline().replace("\n", '').split()
 		thread.start_new_thread(sleep_and_send, (data, 0))
-		global recieved
 		while recieved == False: #wait
 			b = 1
-		recieved = False		
+		recieved = False	
 		time.sleep(float(delay[1]))	#sleep to allow for delay between commands.			
 
 def total_order(): #method which gets messages from sequencer and central server and executes them in a totally ordered manner

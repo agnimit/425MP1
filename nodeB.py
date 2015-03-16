@@ -124,6 +124,7 @@ def received_eventual(data):
 #function to simulate the delays by sleeping and sends message to server
 def sleep_and_send(data, delay):
 	#time.sleep(float(delay))
+	global recieved
 	send_mutex.acquire()
 	parsed = data.split(' ')
 	model = int(parsed[len(parsed) - 1])
@@ -137,6 +138,8 @@ def sleep_and_send(data, delay):
 		if "get" in data:
 			if int(parsed[1]) not in key_value.keys():
 				print "Key does not exist"
+				recieved = True
+				send_mutex.release()	
 				return
 			eventual_read[data] = []
 		server.send("B eventual request: " + data +"\n")
